@@ -7,229 +7,88 @@
 
 <style>
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-family: -apple-system, sans-serif;
   background: #f5f5f7;
   margin: 0;
   padding: 16px;
-  color: #1d1d1f;
 }
 
-.container {
-  max-width: 460px;
-  margin: auto;
-}
+.container { max-width: 460px; margin: auto; }
 
-/* Header */
-.header {
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.header h1 {
-  font-weight: 600;
-}
-
-.header p {
-  color: #6e6e73;
-  font-size: 13px;
-}
-
-/* 卡片 */
 .card {
   background: #fff;
-  border-radius: 18px;
+  border-radius: 16px;
   padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  margin-bottom: 12px;
 }
 
-/* 输入 */
-input {
+input, button {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   margin-top: 8px;
-  border-radius: 12px;
-  border: 1px solid #e5e5ea;
-  background: #f9f9fb;
+  border-radius: 10px;
 }
 
-/* 按钮 */
 button {
-  width: 100%;
-  padding: 12px;
-  border-radius: 12px;
-  border: none;
   background: #007aff;
-  color: white;
-  margin-top: 8px;
+  color: #fff;
+  border: none;
 }
 
-/* 灰色箭头按钮 */
-.arrow-btn {
-  width: auto;
-  background: transparent;
-  color: #8e8e93;
-  font-size: 16px;
-}
-
-/* AI区域 */
-.upload-box {
-  padding: 20px;
-  border-radius: 14px;
-  border: 1px dashed #d1d1d6;
-  text-align: center;
-  background: #fafafa;
-}
-
-/* 卡片 */
-.food-card {
-  background: #f9f9fb;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 10px;
-  border: 1px solid #eee;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.food-card:hover {
-  transform: translateY(-2px);
-}
-
-/* 详情展开 */
-.details {
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  transition: all 0.35s ease;
-}
-
-.details.open {
-  max-height: 300px;
-  opacity: 1;
-  margin-top: 8px;
-}
-
-/* 状态颜色 */
-.green { color: #34c759; }
-.yellow { color: #ff9f0a; }
-.red { color: #ff3b30; }
-
-/* 摇晃动画 */
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-2px); }
-  50% { transform: translateX(2px); }
-  75% { transform: translateX(-1px); }
-  100% { transform: translateX(0); }
-}
-
-.shake {
-  animation: shake 0.4s ease-in-out;
-}
-
-/* 折叠 */
-.collapse-content {
-  overflow: hidden;
-  transition: max-height 0.4s ease, opacity 0.3s ease;
-  max-height: 1000px;
-}
-
-.hidden {
-  max-height: 0;
-  opacity: 0;
-}
-
-/* AI图片 */
 #preview {
   width: 100%;
   margin-top: 10px;
-  border-radius: 12px;
   display: none;
-}
-
-/* 移动端 */
-@media (max-width: 480px) {
-  button {
-    font-size: 15px;
-  }
+  border-radius: 10px;
 }
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-<div class="header">
-  <h1>🧊 My Fridge</h1>
-  <p>智能冰箱助手</p>
-</div>
+<h2>🧊 My Fridge</h2>
 
-<!-- AI -->
 <div class="card">
+  <h3>📸 AI识别</h3>
 
-<h3>📸 AI识别</h3>
+  <input type="file" id="imageInput" accept="image/*" capture="environment">
 
-<div class="upload-box" onclick="triggerUpload()">
-  点击上传 / 拍照
+  <img id="preview">
+
+  <button onclick="runAI()">开始识别</button>
 </div>
 
-<input type="file" id="imageInput" accept="image/*" capture="environment" style="display:none">
-
-<img id="preview">
-
-<button onclick="runAI()">开始识别</button>
-
-</div>
-
-<!-- 添加 -->
 <div class="card">
-
-<div style="display:flex;justify-content:space-between;">
   <h3>➕ 添加食物</h3>
-  <button class="arrow-btn" onclick="toggleAdd()" id="toggleBtn">⯆</button>
-</div>
-
-<div id="addForm" class="collapse-content">
 
   <input id="name" placeholder="名称">
   <input id="days" placeholder="保质期(天)">
   <input id="category" placeholder="分类">
-  <input id="date" type="date">
 
   <button onclick="addFood()">添加</button>
-
 </div>
 
-</div>
-
-<!-- 库存 -->
 <div class="card">
-<h3>📦 冰箱库存</h3>
-<div id="list"></div>
+  <h3>📦 冰箱库存</h3>
+  <div id="list"></div>
 </div>
 
 </div>
 
 <script>
 
-/* ===== AI ===== */
 let currentImage = null;
 
-function triggerUpload(){
-  document.getElementById("imageInput").click();
-}
-
-document.getElementById("imageInput").addEventListener("change", e=>{
+document.getElementById("imageInput").addEventListener("change", e => {
   const file = e.target.files[0];
-  if(!file) return;
+  if (!file) return;
 
   currentImage = file;
 
   const reader = new FileReader();
-  reader.onload = function(e){
+  reader.onload = function(e) {
     const img = document.getElementById("preview");
     img.src = e.target.result;
     img.style.display = "block";
@@ -237,120 +96,66 @@ document.getElementById("imageInput").addEventListener("change", e=>{
   reader.readAsDataURL(file);
 });
 
-/* 模拟AI */
-function runAI(){
+/* ===== AI ===== */
+async function runAI(){
+
   if(!currentImage) return alert("先上传图片");
 
-  document.getElementById("name").value = "牛奶";
-  document.getElementById("days").value = 7;
-  document.getElementById("category").value = "饮品";
+  const reader = new FileReader();
 
-  alert("识别完成（模拟）");
+  reader.onload = async function(){
+
+    const base64 = reader.result;
+
+    const res = await fetch("/api/ai", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ image: base64 })
+    });
+
+    const data = await res.json();
+
+    document.getElementById("name").value = data.name || "";
+    document.getElementById("days").value = data.days || "";
+    document.getElementById("category").value = data.category || "";
+
+    alert("识别完成！");
+  };
+
+  reader.readAsDataURL(currentImage);
 }
 
-/* ===== 添加模块折叠 ===== */
-let addOpen = true;
-
-function toggleAdd(){
-  const form = document.getElementById("addForm");
-  const btn = document.getElementById("toggleBtn");
-
-  addOpen = !addOpen;
-
-  if(addOpen){
-    form.classList.remove("hidden");
-    btn.innerHTML = "⯆";
-  }else{
-    form.classList.add("hidden");
-    btn.innerHTML = "⯈";
-  }
-}
-
-/* ===== 添加食物 ===== */
+/* ===== 本地存储 ===== */
 function addFood(){
-
   const name = document.getElementById("name").value;
-  const days = parseInt(document.getElementById("days").value);
+  const days = document.getElementById("days").value;
   const category = document.getElementById("category").value;
-  const date = document.getElementById("date").value;
 
-  if(!name||!days||!date) return alert("填写完整");
+  let foods = JSON.parse(localStorage.getItem("foods")) || [];
 
-  const expire = new Date(date);
-  expire.setDate(expire.getDate()+days);
+  foods.push({ name, days, category });
 
-  let foods = JSON.parse(localStorage.getItem("foods"))||[];
+  localStorage.setItem("foods", JSON.stringify(foods));
 
-  foods.push({
-    name, category, date,
-    expire: expire.toISOString(),
-    open:false
-  });
-
-  localStorage.setItem("foods",JSON.stringify(foods));
   loadFoods();
 }
 
-/* ===== 删除 ===== */
-function deleteFood(i){
-  let foods = JSON.parse(localStorage.getItem("foods"));
-  foods.splice(i,1);
-  localStorage.setItem("foods",JSON.stringify(foods));
-  loadFoods();
-}
-
-/* ===== 展开 ===== */
-function toggleDetail(i){
-  let foods = JSON.parse(localStorage.getItem("foods"));
-  foods[i].open = !foods[i].open;
-  localStorage.setItem("foods",JSON.stringify(foods));
-  loadFoods();
-}
-
-/* ===== 渲染 ===== */
 function loadFoods(){
-
   const list = document.getElementById("list");
   list.innerHTML = "";
 
-  let foods = JSON.parse(localStorage.getItem("foods"))||[];
-  const now = new Date();
+  let foods = JSON.parse(localStorage.getItem("foods")) || [];
 
-  foods.sort((a,b)=>new Date(a.expire)-new Date(b.expire));
-
-  foods.forEach((f,i)=>{
-
-    const exp = new Date(f.expire);
-    const diff = Math.ceil((exp-now)/(1000*60*60*24));
-
-    let status = diff<0?"已过期":diff<=2?"快过期":`${diff}天`;
-    let color = diff<0||diff<=2?"red":"green";
-
+  foods.forEach(f => {
     const div = document.createElement("div");
-    div.className = "food-card";
-
-    if(diff<0){
-      div.style.opacity="0.5";
-      div.style.filter="grayscale(100%)";
-      setTimeout(()=>div.classList.add("shake"), i*100);
-    }
-
     div.innerHTML = `
-      <div onclick="toggleDetail(${i})">
-        <b>${f.name}</b>
-        <div>📅 ${f.date}</div>
-        <div class="${color}">${status}</div>
-      </div>
-
-      <div class="details ${f.open?'open':''}">
-        <input value="${f.name}">
-        <input value="${f.category}">
-        <div style="display:flex;gap:6px;">
-          <button onclick="deleteFood(${i})">删除</button>
-        </div>
-      </div>
+      <b>${f.name}</b><br>
+      ⏳ ${f.days} 天<br>
+      📦 ${f.category}
+      <hr>
     `;
-
     list.appendChild(div);
   });
 }
