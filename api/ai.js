@@ -1,75 +1,68 @@
 module.exports = async function handler(req, res) {
-  // 1. 限制请求方法
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
   }
 
-  const { image } = req.body;
-
-  // 检查是否传入了图片
-  if (!image) {
-    return res.status(400).json({ error: "缺少图片数据" });
-  }
+  const { image } = req.body; // 确保前端传过来的是图片的 URL
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        // 注意：环境变量名确保在 Vercel 后台配置一致
+        "Authorization": `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+        // 阿里云原生接口通常需要这个 header
+        "X-DashScope-SSE": "disable" 
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "识别图片里的食物，并严格返回JSON格式：{\"name\": \"食物名\", \"days\": 数字, \"category\": \"类别\"}。不要包含任何Markdown标签或多余文字。"
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: image
-                }
-              }
-            ]
-          }
-        ],
-        // 强制要求模型输出 JSON 对象，增加稳定性
-        response_format: { type: "json_object" }
+        model: "qwen-vl-plus",
+        input: {
+          messages: [
+            {
+              role: "user",
+              content: [
+                { text: "请识别图片中的食物，仅返回如下格式的JSON数据，不要包含Markdown代码块或任何解释：{\"name\": \"食物名称\", \"days\": 建议存放天数, \"category\": \"分类\"}" },
+                { image: image } // 阿里云支持 Base64 或 公网 URL
+              ]
+            }
+          ]
+        },
+        parameters: {
+          // 强制模型输出更像 JSON
+          result_format: "message"
+        }
       })
     });
 
     const data = await response.json();
 
-    // 如果 OpenAI 返回错误（如 API Key 失效、余额不足等）
-    if (!response.ok) {
-      console.error("OpenAI Error:", data);
-      return res.status(response.status).json({ error: "OpenAI 接口调用失败", details: data.error?.message });
-    }
+    // 阿里云的返回路径通常是 data.output.choices[0].message.content[0].text
+    const text = data?.output?.choices?.[0]?.message?.content?.[0]?.text;
 
-    const text = data.choices?.[0]?.message?.content;
+    if (!text) {
+      console.error("阿里云返回异常:", data);
+      throw new Error("模型未返回有效文本");
+    }
 
     let result;
     try {
-      // 解析 AI 返回的 JSON 字符串
-      result = JSON.parse(text);
+      // 提取 JSON：防止模型返回 ```json { ... } ``` 
+      const jsonString = text.replace(/```json|```/g, "").trim();
+      result = JSON.parse(jsonString);
     } catch (parseError) {
-      console.error("JSON 解析失败:", text);
+      console.warn("JSON 解析失败，返回默认值:", text);
       result = {
         name: "识别失败",
-        days: 3,
-        category: "其他"
+        days: 0,
+        category: "未知"
       };
     }
 
-    // 返回最终结果
     res.status(200).json(result);
 
-  } catch (e) {
-    console.error("Server Error:", e);
-    res.status(500).json({ error: "服务器内部错误", message: e.message });
+  } catch (err) {
+    console.error("API Error:", err);
+    res.status(500).json({ error: "AI识别失败", details: err.message });
   }
 };
