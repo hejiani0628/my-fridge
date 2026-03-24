@@ -1,40 +1,75 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
   }
 
-  const { image } = req.body; // 确保前端传过来的是图片的 URL
+  const { image } = req.body;
+
+  // 优化：增加图片输入校验
+  if (!image) {
+    return res.status(400).json({ error: "No image data provided" });
+  }
 
   try {
-    const response = await fetch("https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // 注意：环境变量名确保在 Vercel 后台配置一致
-        "Authorization": `Bearer ${process.env.DASHSCOPE_API_KEY}`,
-        // 阿里云原生接口通常需要这个 header
-        "X-DashScope-SSE": "disable" 
-      },
-      body: JSON.stringify({
-        model: "qwen-vl-plus",
-        input: {
-          messages: [
-            {
-              role: "user",
-              content: [
-                { text: "请识别图片中的食物，仅返回如下格式的JSON数据，不要包含Markdown代码块或任何解释：{\"name\": \"食物名称\", \"days\": 建议存放天数, \"category\": \"分类\"}" },
-                { image: image } // 阿里云支持 Base64 或 公网 URL
-              ]
-            }
-          ]
+    const response = await fetch(
+      "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+          // 建议显式关闭 SSE，确保拿到的是完整 JSON 响应
+          "X-DashScope-SSE": "disable" 
         },
-        parameters: {
-          // 强制模型输出更像 JSON
-          result_format: "message"
-        }
-      })
-    });
+        body: JSON.stringify({
+          model: "qwen-vl-plus",
+          input: {
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { text: "你是一个专业的食品识别AI。请识别图片中的主要食物，并严格返回JSON：{\"name\": \"食物名称\", \"days\": 保质期天数, \"category\": \"分类\"}。不要解释，不要多余文字。" },
+                  { image: image } // 确保前端传的是公网 URL 或 base64
+                ]
+              }
+            ]
+          },
+          parameters: {
+            // 优化：告诉阿里云我们要消息模式的输出
+            result_format: "message"
+          }
+        })
+      }
+    );
 
+    const data = await response.json();
+
+    // 容错处理：如果阿里云 API 报错（如 Key 无效或余额不足）
+    if (!response.ok) {
+      console.error("Alibaba Cloud Error:", data);
+      return res.status(response.status).json({ error: "API调用失败", details: data.message });
+    }
+
+    let text = data?.output?.choices?.[0]?.message?.content?.[0]?.text || "";
+
+    // 清理 Markdown 代码块标签
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      console.warn("JSON Parse Failed, Raw Text:", text);
+      result = { name: "识别失败", days: 3, category: "其他" };
+    }
+
+    res.status(200).json(result);
+
+  } catch (err) {
+    console.error("Server Crash:", err);
+    res.status(500).json({ error: "AI识别失败", message: err.message });
+  }
+}
     const data = await response.json();
 
     // 阿里云的返回路径通常是 data.output.choices[0].message.content[0].text
