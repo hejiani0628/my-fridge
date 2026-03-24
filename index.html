@@ -150,6 +150,258 @@ hr {
     📸 AI识别食材 · ⏳ 过期提醒 · 🍳 智能管理 · 🧊 让冰箱更有秩序
   </div>
 
+  <div class="desc">
+    轻松记录冰箱中的食材，通过AI自动识别并管理保质期，<br>
+    帮助你减少浪费，提升生活效率。
+  </div>
+</div>
+
+<!-- AI识别 -->
+<div class="card">
+  <h3>📸 AI识别</h3>
+
+  <div class="upload-box" onclick="document.getElementById('imageInput').click()">
+    📷 点击上传或拍照
+    <br><small>支持相册 & 拍照</small>
+  </div>
+
+  <input type="file" id="imageInput" accept="image/*" capture="environment" style="display:none">
+
+  <img id="preview">
+
+  <button onclick="runAI()">开始识别</button>
+</div>
+
+<!-- 手动添加 -->
+<div class="card">
+  <h3>➕ 添加食物</h3>
+
+  <input id="name" placeholder="名称">
+  <input id="days" placeholder="保质期（天）">
+  <input id="category" placeholder="分类">
+
+  <button onclick="addFood()">添加</button>
+</div>
+
+<!-- 列表 -->
+<div class="card">
+  <h3>📦 冰箱库存</h3>
+  <div id="list"></div>
+</div>
+
+</div>
+
+<script>
+
+let currentImage = null;
+
+/* 选择图片 */
+document.getElementById("imageInput").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  currentImage = file;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById("preview");
+    img.src = e.target.result;
+    img.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+});
+
+/* AI识别 */
+async function runAI(){
+
+  if(!currentImage) return alert("请先上传图片");
+
+  const reader = new FileReader();
+
+  reader.onload = async function(){
+
+    const base64 = reader.result;
+
+    const res = await fetch("/api/ai", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ image: base64 })
+    });
+
+    const data = await res.json();
+
+    document.getElementById("name").value = data.name || "";
+    document.getElementById("days").value = data.days || "";
+    document.getElementById("category").value = data.category || "";
+
+    alert("识别完成！");
+  };
+
+  reader.readAsDataURL(currentImage);
+}
+
+/* 添加 */
+function addFood(){
+
+  const name = document.getElementById("name").value;
+  const days = document.getElementById("days").value;
+  const category = document.getElementById("category").value;
+
+  let foods = JSON.parse(localStorage.getItem("foods")) || [];
+
+  foods.push({ name, days, category });
+
+  localStorage.setItem("foods", JSON.stringify(foods));
+
+  loadFoods();
+}
+
+/* 加载 */
+function loadFoods(){
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  let foods = JSON.parse(localStorage.getItem("foods")) || [];
+
+  foods.forEach(f => {
+
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+      <b>${f.name}</b><br>
+      ⏳ ${f.days} 天<br>
+      📦 ${f.category}
+      <hr>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+loadFoods();
+
+</script>
+
+</body>
+</html>  font-weight: 500;
+}
+
+.subtitle .tags {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.subtitle .desc {
+  font-size: 12px;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* 卡片 */
+.card {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 22px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+}
+
+/* 上传区域 */
+.upload-box {
+  border: 2px dashed #c7c7cc;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  color: #8e8e93;
+  background: #fafafa;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.upload-box:hover {
+  background: #f2f2f7;
+}
+
+/* 图片 */
+#preview {
+  width: 100%;
+  margin-top: 12px;
+  border-radius: 16px;
+  display: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+/* 输入 */
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: 1px solid #d1d1d6;
+  background: #fff;
+  font-size: 15px;
+}
+
+input:focus {
+  border-color: #007aff;
+  outline: none;
+}
+
+/* 按钮 */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 14px;
+  border: none;
+  background: #007aff;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+button:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+/* 列表 */
+#list div {
+  background: white;
+  padding: 14px;
+  border-radius: 14px;
+  margin-top: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* 分割线 */
+hr {
+  border: none;
+  height: 1px;
+  background: #e5e5ea;
+  margin: 10px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🧊 My Fridge</h2>
+
+<!-- 标题说明 -->
+<div class="subtitle">
+  <div class="title">你的智能冰箱管理助手</div>
+
+  <div class="tags">
+    📸 AI识别食材 · ⏳ 过期提醒 · 🍳 智能管理 · 🧊 让冰箱更有秩序
+  </div>
+
  
 </div>
 
