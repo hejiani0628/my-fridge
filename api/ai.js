@@ -1,67 +1,79 @@
-const DashScope = require('@alicloud/dashscope');
+// Vercel Serverless Function
+module.exports = async (req, res) => {
+  // 1. 获取前端传来的参数
+  const { type, image, items } = req.body;
+  const apiKey = process.env.DASHSCOPE_API_KEY;
 
-export default async function handler(req, res) {
-    // 1. 只允许 POST 请求
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
+  // 检查 API Key 是否配置
+  if (!apiKey) {
+    return res.status(500).json({ error: "未配置 DASHSCOPE_API_KEY 环境变量" });
+  }
+
+  try {
+    if (type === 'identify') {
+      // --- 功能 A：AI 拍照识别食材 ---
+      const response = await fetch("https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "qwen-vl-max",
+          input: {
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { text: "你是一个冰箱管家。请识别图中的食材，并严格按以下 JSON 格式返回，不要有其他文字：{\"name\":\"食材名称\",\"days\":建议保质天数,\"category\":\"分类(如蔬菜/肉类/水果/乳品)\"}" },
+                  { image: image }
+                ]
+              }
+            ]
+          }
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.output && data.output.choices) {
+        let content = data.output.choices[0].message.content[0].text;
+        // 核心修复：清理 AI 可能带出来的 Markdown 代码块标签
+        const cleanJson = content.replace(/```json|```/g, '').trim();
+        res.status(200).json(JSON.parse(cleanJson));
+      } else {
+        throw new Error("AI 识别未返回有效结果");
+      }
+
+    } else if (type === 'recipe') {
+      // --- 功能 B：AI 智能菜谱生成 ---
+      const response = await fetch("https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "qwen-turbo",
+          input: {
+            prompt: `作为一名大厨，我有以下食材：${items}。请为我推荐一道简单好做的家常菜，要求有菜名、用料清单和简要步骤。`
+          },
+          parameters: {
+            result_format: "text"
+          }
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.output && data.output.text) {
+        res.status(200).json({ recipe: data.output.text });
+      } else {
+        throw new Error("菜谱生成失败");
+      }
     }
-
-    const { type, image, items } = req.body;
-    const apiKey = process.env.DASHSCOPE_API_KEY;
-
-    if (!apiKey) {
-        return res.status(500).json({ error: '未配置 API Key，请在环境变量中设置' });
-    }
-
-    try {
-        // --- 场景 A：识别食材 (Identify) ---
-        if (type === 'identify') {
-            if (!image) return res.status(400).json({ error: '缺少图片数据' });
-
-            const response = await DashScope.MultiModalConversation.call({
-                model: 'qwen-vl-max', // 使用多模态大模型
-                apiKey: apiKey,
-                input: {
-                    messages: [
-                        {
-                            role: 'user',
-                            content: [
-                                { image: image },
-                                { text: "请识别图片中的食材。仅输出一个 JSON 对象，包含：name (名称), days (建议保质天数，数字), category (分类)。不要输出任何多余文字。" }
-                            ]
-                        }
-                    ]
-                }
-            });
-
-            // 提取并清洗 JSON
-            const resultText = response.output.choices[0].message.content[0].text;
-            const cleanJson = resultText.replace(/```json|```/g, '').trim();
-            return res.status(200).json(JSON.parse(cleanJson));
-        }
-
-        // --- 场景 B：生成菜谱 (Recipe) ---
-        else if (type === 'recipe') {
-            if (!items) return res.status(400).json({ error: '冰箱空空如也，无法生成菜谱' });
-
-            const response = await DashScope.Generation.call({
-                model: 'qwen-turbo', // 生成文本建议用轻量模型，速度快
-                apiKey: apiKey,
-                input: {
-                    prompt: `我的冰箱里有这些食材：${items}。请根据这些食材，为我推荐 2 道家常菜。要求：1. 菜名要有吸引力。2. 简述做法，步骤清晰。3. 语气要像专业的私厨管家。`
-                }
-            });
-
-            const recipeText = response.output.text;
-            return res.status(200).json({ recipe: recipeText });
-        }
-
-        else {
-            return res.status(400).json({ error: '无效的请求类型' });
-        }
-
-    } catch (error) {
-        console.error('AI 接口报错:', error);
-        return res.status(500).json({ error: 'AI 服务暂时不可用，请稍后再试' });
-    }
-}
+  } catch (err) {
+    console.error("API Error:", err);
+    res.status(500).json({ error: "服务器内部错误: " + err.message });
+  }
+};
