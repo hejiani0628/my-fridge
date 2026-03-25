@@ -1,156 +1,153 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#007aff">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="My Fridge">
-<link rel="apple-touch-icon" href="icon.png">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧊 My Fridge 智能管家</title>
-<style>
-    :root { --safe: #34c759; --warning: #ff9500; --danger: #ff3b30; --primary: #007aff; --recipe: #af52de; --gold: #ffcc00; }
-    body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 16px; color: #1c1c1e; padding-bottom: 40px; }
-    .container { max-width: 460px; margin: auto; }
-    h2 { text-align: center; font-weight: 600; margin-bottom: 8px; }
-    .subtitle { text-align: center; margin-bottom: 20px; color: #8e8e93; font-size: 11px; line-height: 1.5; }
-
-    /* 卡片样式 */
-    .card { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-radius: 22px; padding: 18px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); }
-    .card-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .card-header h3 { margin: 0; font-size: 16px; font-weight: 600; }
-    .arrow { color: #c7c7cc; transition: 0.3s; font-size: 10px; }
-    .card-content { display: none; margin-top: 15px; }
-    .card.active .card-content { display: block; }
-    .card.active .arrow { transform: rotate(180deg); }
-
-    /* 按钮与输入框 */
-    .upload-group { display: flex; gap: 10px; margin-bottom: 10px; }
-    .upload-btn { flex: 1; border: 2px dashed #c7c7cc; border-radius: 16px; padding: 16px; text-align: center; color: #8e8e93; background: #fafafa; font-size: 12px; cursor: pointer; }
-    label { display: block; margin-top: 10px; font-size: 11px; color: #8e8e93; margin-left: 4px; }
-    input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 12px; border: 1px solid #d1d1d6; box-sizing: border-box; font-size: 15px; background: #fff; }
-    button.main-btn { width: 100%; padding: 14px; margin-top: 15px; border-radius: 14px; border: none; background: var(--primary); color: white; font-weight: 600; font-size: 15px; cursor: pointer; }
-    
-    /* 菜谱内容区域 */
-    #recipeContent { background: #fff; padding: 15px; border-radius: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; border: 1px solid #efeff4; margin-bottom: 10px; }
-    .save-recipe-btn { background: var(--gold) !important; color: #000 !important; display: none; margin-top: 5px !important; }
-
-    /* 列表项 */
-    .item { background: white; padding: 14px; border-radius: 16px; margin-top: 10px; border: 1px solid #efeff4; position: relative; }
-    .item b { font-size: 15px; display: block; margin-bottom: 4px; }
-    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; margin-top: 8px; }
-    .del-btn { position: absolute; right: 14px; top: 14px; background: #f5f5f7; color: #ff4d4f; border: none; padding: 5px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; }
-    #preview { width: 100%; margin-top: 12px; border-radius: 14px; display: none; }
-    
-    .recipe-text { font-size: 13px; color: #3a3a3c; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 5px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Fridge</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#007aff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <style>
+        :root { --safe: #34c759; --warning: #ff9500; --danger: #ff3b30; --primary: #007aff; --recipe: #af52de; --gold: #ffcc00; --bg: #f2f2f7; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 16px; color: #1c1c1e; }
+        .container { max-width: 480px; margin: 0 auto; }
+        h2 { text-align: center; margin: 10px 0; font-weight: 700; }
+        .subtitle { text-align: center; color: #8e8e93; font-size: 12px; margin-bottom: 20px; }
+        .card { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-radius: 20px; padding: 16px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .card-header h3 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .arrow { color: #c7c7cc; font-size: 12px; transition: 0.3s; }
+        .card-content { display: none; margin-top: 15px; }
+        .card.active .card-content { display: block; }
+        .card.active .arrow { transform: rotate(180deg); }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 12px; }
+        .upload-btn { flex: 1; background: #fff; border: 2px dashed #d1d1d6; border-radius: 12px; padding: 15px; text-align: center; color: #8e8e93; font-size: 13px; cursor: pointer; }
+        label { display: block; font-size: 11px; color: #8e8e93; margin: 10px 0 4px 4px; }
+        input { width: 100%; padding: 12px; border: 1px solid #d1d1d6; border-radius: 12px; font-size: 15px; margin-bottom: 5px; outline: none; }
+        .main-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; color: #fff; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .main-btn:active { opacity: 0.8; transform: scale(0.98); }
+        .btn-primary { background: var(--primary); }
+        .btn-safe { background: var(--safe); }
+        .btn-recipe { background: var(--recipe); }
+        .btn-gold { background: var(--gold); color: #000; display: none; }
+        #preview-container { position: relative; display: none; margin-top: 10px; }
+        #preview { width: 100%; border-radius: 12px; object-fit: cover; max-height: 250px; }
+        .close-preview { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.5); color: #fff; border-radius: 50%; width: 24px; height: 24px; text-align: center; line-height: 22px; font-size: 14px; cursor: pointer; }
+        .item { background: #fff; border: 1px solid #efeff4; border-radius: 15px; padding: 14px; margin-bottom: 10px; position: relative; }
+        .item-info { cursor: pointer; } /* 点击触发编辑 */
+        .item b { font-size: 16px; color: var(--primary); }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-top: 8px; }
+        .del-btn { position: absolute; right: 12px; top: 12px; background: #fef2f2; color: #ef4444; border: none; padding: 6px 10px; border-radius: 8px; font-size: 11px; }
+        #recipeBox { background: #fff; border: 1px solid #efeff4; border-radius: 12px; padding: 15px; font-size: 14px; white-space: pre-wrap; margin-bottom: 10px; min-height: 60px; }
+        .loading { opacity: 0.6; pointer-events: none; }
+    </style>
 </head>
 <body>
 
 <div class="container">
     <h2>🧊 My Fridge</h2>
-    <div class="subtitle">AI 视觉识别 · 临期自动排序 · 智能菜谱推荐</div>
+    <div class="subtitle">AI识别食材 · 长按或点击名称可编辑</div>
 
-    <div class="card active" id="aiCard">
-        <div class="card-header" onclick="toggleCard('aiCard')">
+    <div class="card active" id="card-ai">
+        <div class="card-header" onclick="toggleCard('card-ai')">
             <h3>📸 AI 智能识别</h3><span class="arrow">▼</span>
         </div>
         <div class="card-content">
-            <div class="upload-group">
-                <div class="upload-btn" onclick="document.getElementById('cameraInput').click()">📷 拍照识别</div>
-                <div class="upload-btn" onclick="document.getElementById('albumInput').click()">🖼️ 相册选取</div>
+            <div class="btn-group">
+                <div class="upload-btn" onclick="document.getElementById('file-cam').click()">📷 拍照</div>
+                <div class="upload-btn" onclick="document.getElementById('file-album').click()">🖼️ 相册</div>
             </div>
-            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
-            <input type="file" id="albumInput" accept="image/*" style="display:none">
-            <img id="preview">
-            <button class="main-btn" id="aiBtn" onclick="runAI()">开始 AI 识别</button>
+            <input type="file" id="file-cam" accept="image/*" capture="environment" style="display:none">
+            <input type="file" id="file-album" accept="image/*" style="display:none">
+            <div id="preview-container">
+                <img id="preview">
+                <div class="close-preview" onclick="closePreview()">×</div>
+            </div>
+            <button class="main-btn btn-primary" id="ai-run-btn" onclick="runAI()">开始分析照片</button>
         </div>
     </div>
 
-    <div class="card" id="addCard">
-        <div class="card-header" onclick="toggleCard('addCard')">
-            <h3>➕ 添加食物信息</h3><span class="arrow">▼</span>
+    <div class="card" id="card-add">
+        <div class="card-header" onclick="toggleCard('card-add')">
+            <h3 id="form-title">➕ 添加/修改食材</h3><span class="arrow">▼</span>
         </div>
         <div class="card-content">
+            <input type="hidden" id="edit-id">
             <label>食物名称</label>
-            <input id="name" placeholder="例如：鲜牛奶">
+            <input type="text" id="in-name" placeholder="名称">
             <label>购买日期</label>
-            <input id="buyDate" type="date">
+            <input type="date" id="in-date">
             <label>保质期 (天)</label>
-            <input id="days" type="number" placeholder="例如：7">
+            <input type="number" id="in-days" placeholder="天数">
             <label>分类</label>
-            <input id="category" placeholder="例如：乳制品">
-            <button class="main-btn" onclick="addFood()" style="background:var(--safe)">确认添加到冰箱</button>
+            <input type="text" id="in-cat" placeholder="分类">
+            <button class="main-btn btn-safe" id="save-btn" onclick="addFood()">确认存入冰箱</button>
+            <button class="main-btn" onclick="resetForm()" style="background:#8e8e93; font-size:12px; padding:8px;">取消编辑</button>
         </div>
     </div>
 
-    <div class="card" id="recipeCard">
-        <div class="card-header" onclick="toggleCard('recipeCard')">
-            <h3>🍳 今日食谱推荐</h3><span class="arrow">▼</span>
+    <div class="card" id="card-recipe">
+        <div class="card-header" onclick="toggleCard('card-recipe')">
+            <h3>🍳 智能菜谱</h3><span class="arrow">▼</span>
         </div>
         <div class="card-content">
-            <div id="recipeContent">AI 将根据冰箱现有食材为你定制食谱...</div>
-            <button class="main-btn" id="recipeBtn" onclick="getRecipe()" style="background:var(--recipe)">生成创意菜谱</button>
-            <button class="main-btn save-recipe-btn" id="saveBtn" onclick="saveCurrentRecipe()">📌 收藏这套菜谱</button>
+            <div id="recipeBox">等待生成...</div>
+            <button class="main-btn btn-recipe" id="rec-btn" onclick="generateRecipe()">生成今日推荐</button>
+            <button class="main-btn btn-gold" id="save-rec-btn" onclick="saveRecipe()">📌 收藏此菜谱</button>
         </div>
     </div>
 
-    <div class="card active" id="listCard">
-        <div class="card-header" onclick="toggleCard('listCard')">
-            <h3>📦 冰箱库存 (临期优先)</h3><span class="arrow">▼</span>
+    <div class="card active" id="card-list">
+        <div class="card-header" onclick="toggleCard('card-list')">
+            <h3>📦 冰箱库存</h3><span class="arrow">▼</span>
         </div>
         <div class="card-content">
-            <div id="list"></div>
-        </div>
-    </div>
-
-    <div class="card" id="favCard">
-        <div class="card-header" onclick="toggleCard('favCard')">
-            <h3>⭐ 菜谱收藏夹</h3><span class="arrow">▼</span>
-        </div>
-        <div class="card-content">
-            <div id="favList">暂无收藏内容</div>
+            <div id="food-list"></div>
         </div>
     </div>
 </div>
 
 <script>
-    let currentFile = null;
-    let currentRecipe = "";
+    let selectedFile = null;
+    let lastRecipe = "";
 
-    window.onload = function() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('buyDate').value = today;
-        loadFoods();
-        loadSavedRecipes();
+    window.onload = () => {
+        document.getElementById('in-date').value = new Date().toISOString().split('T')[0];
+        renderFoods();
     };
 
     function toggleCard(id) { document.getElementById(id).classList.toggle('active'); }
 
-    // 处理图片选择预览
-    [document.getElementById('cameraInput'), document.getElementById('albumInput')].forEach(input => {
-        input.addEventListener("change", e => {
+    // 关闭预览图
+    function closePreview() {
+        selectedFile = null;
+        document.getElementById('preview-container').style.display = 'none';
+        document.getElementById('file-cam').value = '';
+        document.getElementById('file-album').value = '';
+    }
+
+    [document.getElementById('file-cam'), document.getElementById('file-album')].forEach(input => {
+        input.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            currentFile = file;
+            selectedFile = file;
             const reader = new FileReader();
             reader.onload = (ev) => {
-                const img = document.getElementById("preview");
-                img.src = ev.target.result;
-                img.style.display = "block";
+                document.getElementById('preview').src = ev.target.result;
+                document.getElementById('preview-container').style.display = 'block';
             };
             reader.readAsDataURL(file);
-        });
+        };
     });
 
     async function compressImage(file) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
-            reader.onload = (e) => {
+            reader.onload = e => {
                 const img = new Image();
                 img.src = e.target.result;
                 img.onload = () => {
@@ -160,143 +157,164 @@
                     if (w > max) { h = (max/w)*h; w = max; }
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
                 };
             };
         });
     }
 
-    // AI 识别逻辑
+    // AI 识别核心逻辑（修复了地址调用）
     async function runAI() {
-        if (!currentFile) return alert("请先拍照或选图");
-        const btn = document.getElementById("aiBtn");
-        btn.innerText = "识别中..."; btn.disabled = true;
+        if (!selectedFile) return alert("请先上传照片");
+        const btn = document.getElementById('ai-run-btn');
+        btn.innerText = "AI 正在识别中..."; btn.classList.add('loading');
         try {
-            const base64 = await compressImage(currentFile);
-            const res = await fetch("/api/ai", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: base64, type: "identify" })
+            const base64 = await compressImage(selectedFile);
+            const res = await fetch('/api/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'identify', image: base64 })
             });
             const data = await res.json();
-            if (res.ok) {
-                document.getElementById("name").value = data.name || "";
-                document.getElementById("days").value = data.days || "";
-                document.getElementById("category").value = data.category || "";
-                document.getElementById("addCard").classList.add("active"); // 识别完自动展开录入表单
-                alert("识别完成，请核对信息并保存！");
+            if (res.ok && data.name) {
+                document.getElementById('in-name').value = data.name;
+                document.getElementById('in-days').value = data.days || 7;
+                document.getElementById('in-cat').value = data.category || "未分类";
+                document.getElementById('card-add').classList.add('active');
+                window.scrollTo(0, document.getElementById('card-add').offsetTop - 20);
+            } else {
+                throw new Error(data.error || "识别失败");
             }
-        } catch (err) { alert("识别出错啦"); }
-        btn.innerText = "开始 AI 识别"; btn.disabled = false;
+        } catch (e) { 
+            alert("识别失败: " + e.message + "\n请检查 Vercel 环境变量 DASHSCOPE_API_KEY");
+        } finally {
+            btn.innerText = "开始分析照片"; btn.classList.remove('loading');
+        }
     }
 
-    // 添加食材到本地存储
+    // 增加/更新食材
     function addFood() {
-        const name = document.getElementById("name").value;
-        const buyDate = document.getElementById("buyDate").value;
-        if (!name || !buyDate) return alert("名称和日期是必填项哦");
+        const name = document.getElementById('in-name').value;
+        const date = document.getElementById('in-date').value;
+        const editId = document.getElementById('edit-id').value;
+        if (!name || !date) return alert("请填写完整");
 
-        let foods = JSON.parse(localStorage.getItem("foods") || "[]");
-        foods.push({
-            id: Date.now(),
-            name: name,
-            buyDate: buyDate,
-            days: document.getElementById("days").value || 0,
-            category: document.getElementById("category").value || "未分类"
-        });
-        localStorage.setItem("foods", JSON.stringify(foods));
-        loadFoods();
+        let list = JSON.parse(localStorage.getItem('fridge_foods') || "[]");
         
-        // 重置表单
-        document.getElementById("name").value = "";
-        document.getElementById("addCard").classList.remove("active");
+        if (editId) {
+            // 编辑逻辑
+            list = list.map(item => item.id == editId ? {
+                ...item,
+                name: name,
+                buyDate: date,
+                days: parseInt(document.getElementById('in-days').value) || 0,
+                category: document.getElementById('in-cat').value || "未分类"
+            } : item);
+        } else {
+            // 新增逻辑
+            list.push({
+                id: Date.now(),
+                name: name, buyDate: date,
+                days: parseInt(document.getElementById('in-days').value) || 0,
+                category: document.getElementById('in-cat').value || "未分类"
+            });
+        }
+        
+        localStorage.setItem('fridge_foods', JSON.stringify(list));
+        resetForm();
+        renderFoods();
+        closePreview();
     }
 
-    // 菜谱推荐逻辑
-    async function getRecipe() {
-        let foods = JSON.parse(localStorage.getItem("foods") || "[]");
-        const foodNames = foods.filter(f => getDiffDays(f.buyDate, f.days) >= 0).map(f => f.name).join(",");
-        if (!foodNames) return alert("冰箱里没有可用食材哦");
+    // 编辑食材（点击名称触发）
+    function editFood(id) {
+        const list = JSON.parse(localStorage.getItem('fridge_foods') || "[]");
+        const item = list.find(i => i.id == id);
+        if (!item) return;
 
-        const btn = document.getElementById("recipeBtn");
-        const content = document.getElementById("recipeContent");
-        btn.innerText = "正在大显身手..."; btn.disabled = true;
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('in-name').value = item.name;
+        document.getElementById('in-date').value = item.buyDate;
+        document.getElementById('in-days').value = item.days;
+        document.getElementById('in-cat').value = item.category;
+        
+        document.getElementById('form-title').innerText = "📝 修改食材信息";
+        document.getElementById('save-btn').innerText = "保存修改";
+        document.getElementById('card-add').classList.add('active');
+        window.scrollTo(0, document.getElementById('card-add').offsetTop - 20);
+    }
 
+    function resetForm() {
+        document.getElementById('edit-id').value = "";
+        document.getElementById('in-name').value = "";
+        document.getElementById('in-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('in-days').value = "";
+        document.getElementById('in-cat').value = "";
+        document.getElementById('form-title').innerText = "➕ 添加食材信息";
+        document.getElementById('save-btn').innerText = "确认存入冰箱";
+    }
+
+    async function generateRecipe() {
+        const foods = JSON.parse(localStorage.getItem('fridge_foods') || "[]");
+        const names = foods.filter(f => getDaysLeft(f.buyDate, f.days) >= -2).map(f => f.name).join(',');
+        if (!names) return alert("冰箱里没菜啦");
+
+        const btn = document.getElementById('rec-btn');
+        const box = document.getElementById('recipeBox');
+        btn.innerText = "大厨思考中..."; btn.classList.add('loading');
         try {
-            const res = await fetch("/api/ai", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ items: foodNames, type: "recipe" })
+            const res = await fetch('/api/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'recipe', items: names })
             });
             const data = await res.json();
-            currentRecipe = data.recipe;
-            content.innerText = currentRecipe;
-            document.getElementById("saveBtn").style.display = "block";
-        } catch (err) { alert("菜谱生成失败"); }
-        btn.innerText = "重新生成"; btn.disabled = false;
+            if (data.recipe) {
+                lastRecipe = data.recipe;
+                box.innerText = lastRecipe;
+                document.getElementById('save-rec-btn').style.display = 'block';
+            } else { throw new Error(); }
+        } catch (e) { alert("菜谱生成失败，请稍后再试"); }
+        btn.innerText = "生成今日推荐"; btn.classList.remove('loading');
     }
 
-    function saveCurrentRecipe() {
-        if (!currentRecipe) return;
-        let saved = JSON.parse(localStorage.getItem("savedRecipes") || "[]");
-        saved.unshift({ id: Date.now(), content: currentRecipe, date: new Date().toLocaleDateString() });
-        localStorage.setItem("savedRecipes", JSON.stringify(saved));
-        alert("菜谱已收藏！");
-        loadSavedRecipes();
-        document.getElementById("saveBtn").style.display = "none";
-    }
-
-    function loadSavedRecipes() {
-        const container = document.getElementById("favList");
-        let saved = JSON.parse(localStorage.getItem("savedRecipes") || "[]");
-        if (saved.length === 0) { container.innerText = "暂无收藏内容"; return; }
-        container.innerHTML = "";
-        saved.forEach(r => {
-            const div = document.createElement("div");
-            div.className = "item";
-            div.innerHTML = `<b>保存于 ${r.date}</b><div class="recipe-text">${r.content}</div><button class="del-btn" onclick="deleteRecipe(${r.id})">移除</button><button onclick="alert(\`${r.content.replace(/`/g, "'")}\`)" style="border:none;background:none;color:var(--primary);font-size:11px;cursor:pointer;padding:0;margin-top:5px;">查看全文</button>`;
-            container.appendChild(div);
-        });
-    }
-
-    function deleteRecipe(id) {
-        let saved = JSON.parse(localStorage.getItem("savedRecipes") || "[]").filter(r => r.id !== id);
-        localStorage.setItem("savedRecipes", JSON.stringify(saved));
-        loadSavedRecipes();
-    }
-
-    // 库存排序与加载
-    function getDiffDays(buyDate, shelfLife) {
-        const start = new Date(buyDate);
-        const life = parseInt(shelfLife) || 0;
+    function getDaysLeft(buyDate, shelfLife) {
+        const expiry = new Date(buyDate);
+        expiry.setDate(expiry.getDate() + (shelfLife || 0));
         const today = new Date(); today.setHours(0,0,0,0);
-        const expiryDate = new Date(start);
-        expiryDate.setDate(start.getDate() + life);
-        return Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        return Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
     }
 
-    function loadFoods() {
-        const list = document.getElementById("list");
-        let foods = JSON.parse(localStorage.getItem("foods") || "[]");
-        foods.sort((a, b) => getDiffDays(a.buyDate, a.days) - getDiffDays(b.buyDate, b.days));
-        list.innerHTML = foods.length ? "" : "冰箱空空如也";
-        foods.forEach(f => {
-            const diff = getDiffDays(f.buyDate, f.days);
-            let color = "var(--safe)", bg = "#f2fcf5", txt = `还剩 ${diff} 天`;
-            if(diff < 0) { color = "var(--danger)"; bg = "#fff2f1"; txt = `已过期 ${Math.abs(diff)} 天`; }
-            else if(diff <= 2) { color = "var(--warning)"; bg = "#fff9f2"; txt = `仅剩 ${diff} 天`; }
-            const div = document.createElement("div");
-            div.className = "item";
-            div.innerHTML = `<b>${f.name}</b><small>${f.category} · ${f.buyDate} 购入</small><div class="status-badge" style="color:${color};background:${bg}">${txt}</div><button class="del-btn" onclick="deleteFood(${f.id})">移除</button>`;
-            list.appendChild(div);
+    function renderFoods() {
+        const box = document.getElementById('food-list');
+        let list = JSON.parse(localStorage.getItem('fridge_foods') || "[]");
+        list.sort((a, b) => getDaysLeft(a.buyDate, a.days) - getDaysLeft(b.buyDate, b.days));
+        box.innerHTML = list.length ? "" : '<p style="text-align:center;color:#999;">空空如也</p>';
+        list.forEach(f => {
+            const left = getDaysLeft(f.buyDate, f.days);
+            let ui = { color: 'var(--safe)', bg: '#f2fcf5', txt: `剩 ${left} 天` };
+            if (left < 0) ui = { color: 'var(--danger)', bg: '#fff2f1', txt: `过期 ${Math.abs(left)} 天` };
+            else if (left <= 2) ui = { color: 'var(--warning)', bg: '#fff9f2', txt: `仅剩 ${left} 天` };
+
+            const div = document.createElement('div');
+            div.className = 'item';
+            div.innerHTML = `
+                <div class="item-info" onclick="editFood(${f.id})">
+                    <b>${f.name}</b>
+                    <small>${f.category} · ${f.buyDate} 购入</small><br>
+                    <div class="badge" style="color:${ui.color}; background:${ui.bg}">${ui.txt}</div>
+                </div>
+                <button class="del-btn" onclick="deleteFood(${f.id})">移除</button>
+            `;
+            box.appendChild(div);
         });
     }
 
     function deleteFood(id) {
-        if(!confirm("确定移除该食材吗？")) return;
-        let foods = JSON.parse(localStorage.getItem("foods") || "[]").filter(i => i.id !== id);
-        localStorage.setItem("foods", JSON.stringify(foods));
-        loadFoods();
+        if(!confirm("确定移除？")) return;
+        let list = JSON.parse(localStorage.getItem('fridge_foods') || "[]").filter(i => i.id != id);
+        localStorage.setItem('fridge_foods', JSON.stringify(list));
+        renderFoods();
     }
 </script>
 </body>
